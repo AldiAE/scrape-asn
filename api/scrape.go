@@ -285,7 +285,7 @@ func downloadCSV(w http.ResponseWriter, kode string) {
 }
 
 // Vercel entrypoint
-func Handler(w http.ResponseWriter, r *http.Request) {
+func Handler() {
 	// Because the file is /api/scrape.go, automatically this Handler will be triggered for /api/scrape
 	http.HandleFunc("/", Form) // form input
 	http.HandleFunc("/scrape", ScrapeHandler)
