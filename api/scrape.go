@@ -8,7 +8,6 @@ import (
 	"io"
 	"log"
 	"net/http"
-	"os"
 	"strconv"
 	"strings"
 )
@@ -285,16 +284,14 @@ func downloadCSV(w http.ResponseWriter, kode string) {
 }
 
 // Vercel entrypoint
-func Handler() {
-	// Because the file is /api/scrape.go, automatically this Handler will be triggered for /api/scrape
-	http.HandleFunc("/", Form) // form input
-	http.HandleFunc("/scrape", ScrapeHandler)
-
-	port := "8080" // default
-	if p := os.Getenv("PORT"); p != "" {
-		port = p
+func Handler(w http.ResponseWriter, r *http.Request) {
+	// Routing manual untuk path yang ada di file API ini
+	switch r.URL.Path {
+	case "/":
+		Form(w, r)
+	case "/scrape":
+		ScrapeHandler(w, r)
+	default:
+		http.NotFound(w, r)
 	}
-
-	fmt.Println("Server running di port", port)
-	log.Fatal(http.ListenAndServe(":"+port, nil))
 }
