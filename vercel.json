@@ -4,7 +4,7 @@
       { "src": "api/*.go", "use": "@vercel/go" }
     ],
     "routes": [
-      { "src": "/", "dest": "/api/index" },
+      { "src": "/", "dest": "/api/scrape" },
       { "src": "/scrape", "dest": "/api/scrape" }
     ]
   }
