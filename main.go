@@ -297,4 +297,10 @@ func main() {
 	log.Fatal(http.ListenAndServe(":"+port, nil))
 }
 
+// Vercel entrypoint
+func Handler(w http.ResponseWriter, r *http.Request) {
+	// Because the file is /api/scrape.go, automatically this Handler will be triggered for /api/scrape
+	scrapeHandler(w, r)
+}
+
 //4415214
