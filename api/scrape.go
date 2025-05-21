@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"sync"
 )
 
 type ApiResponse struct {
@@ -248,21 +249,58 @@ func downloadCSV(w http.ResponseWriter, kode string) {
 	// Tulis header CSV
 	writer.Write([]string{"Nama Instansi", "Formasi", "Jabatan", "Unit Kerja", "Jumlah Kebutuhan", "Gaji Min", "Gaji Max", "Link"})
 
-	offset := 0
 	limit := 10
 
-	for {
-		dataResp, err := getData(offset, kode, "2")
-		if err != nil {
-			http.Error(w, "Gagal mengambil data untuk CSV: "+err.Error(), http.StatusInternalServerError)
+	// Ambil total dulu untuk tahu berapa batch
+	firstResp, err := getData(0, kode, "2")
+	if err != nil {
+		http.Error(w, "Gagal mengambil data awal: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	total := firstResp.Data.Meta.Total
+
+	type result struct {
+		offset int
+		data   []Formasi // ganti YourDataType dengan tipe data dari dataResp.Data.Data
+		err    error
+	}
+
+	numBatch := (total + limit - 1) / limit
+	resultsChan := make(chan result, numBatch)
+
+	var wg sync.WaitGroup
+	for i := 0; i < numBatch; i++ {
+		wg.Add(1)
+		offset := i * limit
+		go func(off int) {
+			defer wg.Done()
+			resp, err := getData(off, kode, "2")
+			var d []Formasi
+			if err == nil {
+				d = resp.Data.Data
+			}
+			resultsChan <- result{offset: off, data: d, err: err}
+		}(offset)
+	}
+
+	wg.Wait()
+	close(resultsChan)
+
+	// Kumpulkan semua hasil ke map agar bisa ditulis berurutan berdasarkan offset
+	resultsMap := make(map[int][]Formasi)
+	for res := range resultsChan {
+		if res.err != nil {
+			// Kalau ada error salah satu batch, bisa langsung stop atau continue
+			http.Error(w, "Gagal mengambil data batch: "+res.err.Error(), http.StatusInternalServerError)
 			return
 		}
+		resultsMap[res.offset] = res.data
+	}
 
-		if len(dataResp.Data.Data) == 0 {
-			break
-		}
-
-		for _, f := range dataResp.Data.Data {
+	// Tulis ke CSV berdasarkan urutan offset
+	for i := 0; i < numBatch; i++ {
+		dataBatch := resultsMap[i*limit]
+		for _, f := range dataBatch {
 			row := []string{
 				f.InsNm,
 				strings.TrimSpace(f.JpNama + " " + f.FormasiNm),
@@ -274,11 +312,6 @@ func downloadCSV(w http.ResponseWriter, kode string) {
 				"https://sscasn.bkn.go.id/detailformasi/" + f.FormasiID,
 			}
 			writer.Write(row)
-		}
-
-		offset += limit
-		if offset >= dataResp.Data.Meta.Total {
-			break
 		}
 	}
 }
