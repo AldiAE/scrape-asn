@@ -99,7 +99,7 @@ func getData(offset int, kodeRefPend, pengadaanKd string) (*ApiResponse, error) 
 	return &apiResp, nil
 }
 
-func Form(w http.ResponseWriter, r *http.Request) {
+func index(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodGet {
 		// Form input kode pendidikan
 		form := `
@@ -120,7 +120,7 @@ func Form(w http.ResponseWriter, r *http.Request) {
 }
 
 // Handler scrape + pagination + download CSV
-func ScrapeHandler(w http.ResponseWriter, r *http.Request) {
+func scrapeHandler(w http.ResponseWriter, r *http.Request) {
 	kode := ""
 	page := 1
 	isDownload := false
@@ -288,9 +288,9 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 	// Routing manual untuk path yang ada di file API ini
 	switch r.URL.Path {
 	case "/":
-		Form(w, r)
+		index(w, r)
 	case "/scrape":
-		ScrapeHandler(w, r)
+		scrapeHandler(w, r)
 	default:
 		http.NotFound(w, r)
 	}
