@@ -300,7 +300,16 @@ func main() {
 // Vercel entrypoint
 func Handler(w http.ResponseWriter, r *http.Request) {
 	// Because the file is /api/scrape.go, automatically this Handler will be triggered for /api/scrape
-	scrapeHandler(w, r)
+	http.HandleFunc("/", handler) // form input
+	http.HandleFunc("/scrape", scrapeHandler)
+
+	port := "8080" // default
+	if p := os.Getenv("PORT"); p != "" {
+		port = p
+	}
+
+	fmt.Println("Server running di port", port)
+	log.Fatal(http.ListenAndServe(":"+port, nil))
 }
 
 //4415214
