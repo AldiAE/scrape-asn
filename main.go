@@ -1,4 +1,4 @@
-package handler
+package main
 
 import (
 	"encoding/csv"
@@ -100,7 +100,7 @@ func getData(offset int, kodeRefPend, pengadaanKd string) (*ApiResponse, error) 
 	return &apiResp, nil
 }
 
-func handler(w http.ResponseWriter, r *http.Request) {
+func Form(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodGet {
 		// Form input kode pendidikan
 		form := `
@@ -121,7 +121,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 }
 
 // Handler scrape + pagination + download CSV
-func scrapeHandler(w http.ResponseWriter, r *http.Request) {
+func ScrapeHandler(w http.ResponseWriter, r *http.Request) {
 	kode := ""
 	page := 1
 	isDownload := false
@@ -285,23 +285,8 @@ func downloadCSV(w http.ResponseWriter, kode string) {
 }
 
 func main() {
-	http.HandleFunc("/", handler) // form input
-	http.HandleFunc("/scrape", scrapeHandler)
-
-	port := "8080" // default
-	if p := os.Getenv("PORT"); p != "" {
-		port = p
-	}
-
-	fmt.Println("Server running di port", port)
-	log.Fatal(http.ListenAndServe(":"+port, nil))
-}
-
-// Vercel entrypoint
-func Handler(w http.ResponseWriter, r *http.Request) {
-	// Because the file is /api/scrape.go, automatically this Handler will be triggered for /api/scrape
-	http.HandleFunc("/", handler) // form input
-	http.HandleFunc("/scrape", scrapeHandler)
+	http.HandleFunc("/", Form) // form input
+	http.HandleFunc("/scrape", ScrapeHandler)
 
 	port := "8080" // default
 	if p := os.Getenv("PORT"); p != "" {
