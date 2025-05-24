@@ -11,6 +11,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+
 	"github.com/dustin/go-humanize"
 )
 
@@ -258,7 +259,7 @@ func scrapeHandler(w http.ResponseWriter, r *http.Request) {
 // Fungsi download CSV, scrape semua data hingga habis
 func downloadCSV(w http.ResponseWriter, kode string) {
 	w.Header().Set("Content-Type", "text/csv")
-	w.Header().Set("Content-Disposition", `attachment; filename="data_formasi.csv"`)
+	w.Header().Set("Content-Disposition", `attachment; filename="data_formasi_`+kode+`.csv"`)
 
 	writer := csv.NewWriter(w)
 	defer writer.Flush()
