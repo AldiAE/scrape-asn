@@ -11,6 +11,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"github.com/dustin/go-humanize"
 )
 
 type ApiResponse struct {
@@ -36,8 +37,18 @@ type Formasi struct {
 	JabatanNm     string `json:"jabatan_nm"`
 	LokasiNm      string `json:"lokasi_nm"`
 	JumlahFormasi int    `json:"jumlah_formasi"`
+	JumlahFormasi int    `json:"jumlah_formasi"`
 	GajiMin       string `json:"gaji_min"`
 	GajiMax       string `json:"gaji_max"`
+}
+
+func formatRupiah(gaji string) string {
+	n, err := strconv.Atoi(gaji)
+	if err != nil {
+		return gaji // fallback
+	}
+	// Ubah "1,000,000" jadi "1.000.000"
+	return strings.ReplaceAll(humanize.Comma(int64(n)), ",", ".")
 }
 
 func getData(offset int, kodeRefPend, pengadaanKd string) (*ApiResponse, error) {
@@ -166,6 +177,10 @@ func scrapeHandler(w http.ResponseWriter, r *http.Request) {
 
 	total := dataResp.Data.Meta.Total
 	totalPages := (total + 9) / 10
+	for i := range dataResp.Data.Data {
+		dataResp.Data.Data[i].GajiMin = formatRupiah(dataResp.Data.Data[i].GajiMin)
+		dataResp.Data.Data[i].GajiMax = formatRupiah(dataResp.Data.Data[i].GajiMax)
+	}
 
 	// Tampilkan hasil tabel dengan pagination dan tombol download CSV
 	tmpl := `
@@ -189,6 +204,7 @@ func scrapeHandler(w http.ResponseWriter, r *http.Request) {
 			<th>Jabatan</th>
 			<th>Unit Kerja</th>
 			<th>Jumlah Kebutuhan</th>
+			<th>MS</th>
 			<th>Gaji Min</th>
 			<th>Gaji Max</th>
 			<th>Link</th>
@@ -200,6 +216,7 @@ func scrapeHandler(w http.ResponseWriter, r *http.Request) {
 			<td>{{.JabatanNm}}</td>
 			<td>{{.LokasiNm}}</td>
 			<td>{{.JumlahFormasi}}</td>
+			<td>{{.JumlahMs}}</td>
 			<td>{{.GajiMin}}</td>
 			<td>{{.GajiMax}}</td>
 			<td><a href="https://sscasn.bkn.go.id/detailformasi/{{.FormasiID}}" target="_blank">Detail</a></td>
@@ -247,7 +264,7 @@ func downloadCSV(w http.ResponseWriter, kode string) {
 	defer writer.Flush()
 
 	// Tulis header CSV
-	writer.Write([]string{"Nama Instansi", "Formasi", "Jabatan", "Unit Kerja", "Jumlah Kebutuhan", "Gaji Min", "Gaji Max", "Link"})
+	writer.Write([]string{"Nama Instansi", "Formasi", "Jabatan", "Unit Kerja", "Jumlah Kebutuhan", "MS", "Gaji Min", "Gaji Max", "Link"})
 
 	limit := 10
 
@@ -307,8 +324,9 @@ func downloadCSV(w http.ResponseWriter, kode string) {
 				f.JabatanNm,
 				f.LokasiNm,
 				strconv.Itoa(f.JumlahFormasi),
-				f.GajiMin,
-				f.GajiMax,
+				strconv.Itoa(f.JumlahMs),
+				formatRupiah(f.GajiMin),
+				formatRupiah(f.GajiMax),
 				"https://sscasn.bkn.go.id/detailformasi/" + f.FormasiID,
 			}
 			writer.Write(row)
