@@ -37,7 +37,7 @@ type Formasi struct {
 	JabatanNm     string `json:"jabatan_nm"`
 	LokasiNm      string `json:"lokasi_nm"`
 	JumlahFormasi int    `json:"jumlah_formasi"`
-	JumlahFormasi int    `json:"jumlah_formasi"`
+	JumlahMs      int    `json:"jumlah_ms"`
 	GajiMin       string `json:"gaji_min"`
 	GajiMax       string `json:"gaji_max"`
 }
